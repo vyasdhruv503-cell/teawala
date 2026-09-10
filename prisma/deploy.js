@@ -6,30 +6,42 @@ const AIVEN_DB_URL = [
   'postgresql://avnadmin:',
   'AVNS_jkxy',
   'CM5b6pHT1PkTsQZ',
-  '@pg-e51004a-vyasdhruv503-34d1.f.aivencloud.com:17669/defaultdb?sslmode=require'
+  '@pg-e51004a-vyasdhruv503-34d1.f.aivencloud.com:17669/defaultdb?sslmode=require&connection_limit=5&pool_timeout=30&connect_timeout=15'
 ].join('');
 
 let dbUrl = process.env.DATABASE_URL;
 
 if (dbUrl) {
-  dbUrl = dbUrl.trim().replace(/^["']|["']$/g, '');
+  // Strip whitespace, tabs, and wrapping double or single quotes
+  dbUrl = dbUrl.trim().replace(/^["']|["']$/g, '').trim();
+  if (dbUrl.startsWith('postgres://')) {
+    dbUrl = 'postgresql://' + dbUrl.substring('postgres://'.length);
+  }
+  if (!dbUrl.includes('connection_limit')) {
+    dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'connection_limit=5&pool_timeout=30&connect_timeout=15';
+  }
 }
 
 if (!dbUrl || (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://'))) {
+  console.log('⚠️  DATABASE_URL was invalid or not set. Using secure Aiven PostgreSQL connection.');
   dbUrl = AIVEN_DB_URL;
 }
 
+process.env.DATABASE_URL = dbUrl;
+const envVars = { ...process.env, DATABASE_URL: dbUrl };
+
 console.log('🚀 Prisma Deploy Script starting...');
 console.log('📡 Using PostgreSQL Database host:', dbUrl.split('@')[1] || 'Aiven PostgreSQL Host');
-
-const envVars = { ...process.env, DATABASE_URL: dbUrl };
 
 try {
   // Remove any stale backend/node_modules/@prisma/client directory if present
   const backendClientDir = path.join(__dirname, '../backend/node_modules/@prisma/client');
   if (fs.existsSync(backendClientDir)) {
-    console.log('🧹 Removing stale backend/node_modules/@prisma/client...');
-    fs.rmSync(backendClientDir, { recursive: true, force: true });
+    try {
+      fs.rmSync(backendClientDir, { recursive: true, force: true });
+    } catch (e) {
+      // Ignore if locked by a running process on Windows
+    }
   }
 
   console.log('1️⃣ Generating Prisma Client...');
