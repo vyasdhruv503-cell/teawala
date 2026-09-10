@@ -21,8 +21,8 @@ export const KitchenOrderCard: React.FC<KitchenOrderCardProps> = ({ order, onAdv
   const nextStatusConfig: Record<string, { label: string; next: string; icon: any; variant: any }> = {
     PENDING: { label: 'Accept Order', next: 'ACCEPTED', icon: CheckCircle2, variant: 'primary' },
     ACCEPTED: { label: 'Start Preparing', next: 'PREPARING', icon: Flame, variant: 'secondary' },
-    PREPARING: { label: 'Mark Ready', next: 'READY', icon: Play, variant: 'primary' },
-    READY: { label: 'Complete Order', next: 'COMPLETED', icon: CheckCheck, variant: 'ghost' },
+    PREPARING: { label: 'Mark Ready to Serve', next: 'READY', icon: Play, variant: 'primary' },
+    READY: { label: 'Complete & Serve Order', next: 'COMPLETED', icon: CheckCheck, variant: 'primary' },
   };
 
   const config = nextStatusConfig[order.orderStatus];

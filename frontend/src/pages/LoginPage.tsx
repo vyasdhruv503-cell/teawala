@@ -66,7 +66,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       <div className="max-w-md w-full bg-white border border-[#E2DCD5] rounded-3xl p-8 shadow-xl space-y-6">
         {/* Brand Header */}
         <div className="text-center">
-          <div className="h-16 px-4 bg-[#251713] border border-[#4A3228] rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md inline-block">
+          <div className="h-16 px-4 bg-[#251713] border border-[#4A3228] rounded-2xl inline-flex items-center justify-center mx-auto mb-3 shadow-md">
             <img src="/logo.png" alt="TeaWala Logo" className="h-12 w-auto object-contain mx-auto" />
           </div>
           <h1 className="text-2xl font-black text-[#1C130E] tracking-wide">TeaWala Portal</h1>

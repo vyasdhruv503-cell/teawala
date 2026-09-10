@@ -420,32 +420,32 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard
                     title="Today's Revenue"
-                    value={`₹${dashboardData.metrics.todaySales.toFixed(2)}`}
-                    subtitle={`${dashboardData.metrics.todayOrders} orders today`}
+                    value={`₹${Number(dashboardData.metrics?.todaySales || 0).toFixed(2)}`}
+                    subtitle={`${dashboardData.metrics?.todayOrders || 0} orders today`}
                     icon={DollarSign}
                     color="emerald"
                   />
                   <StatCard
                     title="Active Orders"
                     value={
-                      dashboardData.metrics.pendingOrders +
-                      dashboardData.metrics.preparingOrders
+                      (dashboardData.metrics?.pendingOrders || 0) +
+                      (dashboardData.metrics?.preparingOrders || 0)
                     }
-                    subtitle={`${dashboardData.metrics.pendingOrders} pending kitchen approval`}
+                    subtitle={`${dashboardData.metrics?.pendingOrders || 0} pending kitchen approval`}
                     icon={Clock}
                     color="amber"
                   />
                   <StatCard
                     title="Completed Orders"
-                    value={dashboardData.metrics.completedOrders}
-                    subtitle={`Out of ${dashboardData.metrics.totalOrders} total orders`}
+                    value={dashboardData.metrics?.completedOrders || 0}
+                    subtitle={`Out of ${dashboardData.metrics?.totalOrders || 0} total orders`}
                     icon={ShoppingBag}
                     color="indigo"
                   />
                   <StatCard
                     title="Menu Products"
-                    value={dashboardData.metrics.totalProducts}
-                    subtitle={`${dashboardData.metrics.totalTables} active QR tables`}
+                    value={dashboardData.metrics?.totalProducts || 0}
+                    subtitle={`${dashboardData.metrics?.totalTables || 0} active QR tables`}
                     icon={UtensilsCrossed}
                     color="blue"
                   />
@@ -461,7 +461,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     </h3>
                     <div className="h-72 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={dashboardData.salesTrend}>
+                        <AreaChart data={dashboardData.salesTrend || []}>
                           <defs>
                             <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
@@ -499,20 +499,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       Top Selling Products
                     </h3>
                     <div className="space-y-3">
-                      {dashboardData.popularProducts.map((item: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-3.5 bg-[#FAF7F2] rounded-2xl border border-[#E2DCD5]"
-                        >
-                          <div>
-                            <p className="text-xs font-extrabold text-stone-900">{item.name}</p>
-                            <p className="text-[11px] text-stone-500 font-medium">{item.quantity} sold</p>
+                      {dashboardData.popularProducts && dashboardData.popularProducts.length > 0 ? (
+                        dashboardData.popularProducts.map((item: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-3.5 bg-[#FAF7F2] rounded-2xl border border-[#E2DCD5]"
+                          >
+                            <div>
+                              <p className="text-xs font-extrabold text-stone-900">{item.name}</p>
+                              <p className="text-[11px] text-stone-500 font-medium">{item.quantity} sold</p>
+                            </div>
+                            <span className="text-xs font-black text-[#10B981]">
+                              ₹{Number(item.revenue || 0).toFixed(2)}
+                            </span>
                           </div>
-                          <span className="text-xs font-black text-[#10B981]">
-                            ₹{item.revenue.toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        <p className="text-xs text-stone-400 italic py-6 text-center">No orders recorded yet today</p>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -19,18 +19,12 @@ export const getDashboardMetrics = async (req: Request, res: Response, next: Nex
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    // Execute all dashboard database operations in parallel
+    // Step 1: Run core counts and aggregates safely within connection pool limits
     const [
       todaySalesAgg,
-      totalOrdersCount,
       todayOrdersCount,
-      pendingCount,
-      preparingCount,
-      completedCount,
+      statusGroups,
       totalProductsCount,
-      totalTablesCount,
-      recentOrders,
-      topItems,
     ] = await Promise.all([
       prisma.order.aggregate({
         _sum: { total: true },
@@ -40,12 +34,31 @@ export const getDashboardMetrics = async (req: Request, res: Response, next: Nex
           orderStatus: { not: 'CANCELLED' },
         },
       }),
-      prisma.order.count({ where: { cafeId } }),
       prisma.order.count({ where: { cafeId, createdAt: { gte: startOfToday } } }),
-      prisma.order.count({ where: { cafeId, orderStatus: 'PENDING' } }),
-      prisma.order.count({ where: { cafeId, orderStatus: { in: ['ACCEPTED', 'PREPARING'] } } }),
-      prisma.order.count({ where: { cafeId, orderStatus: 'COMPLETED' } }),
+      prisma.order.groupBy({
+        by: ['orderStatus'],
+        where: { cafeId },
+        _count: { id: true },
+      }),
       prisma.product.count({ where: { cafeId } }),
+    ]);
+
+    // Aggregate counts without extra database queries
+    let totalOrdersCount = 0;
+    let pendingCount = 0;
+    let preparingCount = 0;
+    let completedCount = 0;
+
+    for (const group of statusGroups) {
+      const count = group._count.id;
+      totalOrdersCount += count;
+      if (group.orderStatus === 'PENDING') pendingCount = count;
+      else if (group.orderStatus === 'ACCEPTED' || group.orderStatus === 'PREPARING') preparingCount += count;
+      else if (group.orderStatus === 'COMPLETED') completedCount = count;
+    }
+
+    // Step 2: Run secondary queries for charts and tables
+    const [totalTablesCount, recentOrders, topItems] = await Promise.all([
       prisma.cafeTable.count({ where: { cafeId, isActive: true } }),
       prisma.order.findMany({
         where: {
@@ -220,6 +233,19 @@ export const deleteProduct = async (req: Request, res: Response, next: NextFunct
 
     const existing = await prisma.product.findFirst({ where: { id, cafeId } });
     if (!existing) return res.status(404).json({ error: 'Product not found.' });
+
+    // Check if product is referenced in historical orders
+    const orderItemsCount = await prisma.orderItem.count({ where: { productId: id } });
+    if (orderItemsCount > 0) {
+      await prisma.product.update({
+        where: { id },
+        data: { isAvailable: false },
+      });
+      return res.json({
+        message: 'Product has order history and has been archived (set to unavailable) to preserve records.',
+        archived: true,
+      });
+    }
 
     await prisma.product.delete({ where: { id } });
     res.json({ message: 'Product deleted successfully.' });
@@ -412,7 +438,7 @@ export const generateQRCodeDataUrl = async (req: Request, res: Response, next: N
   try {
     const { qrToken } = req.params;
     const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
-    const menuUrl = `${frontendUrl}/menu?table=${qrToken}`;
+    const menuUrl = `${frontendUrl}/?table=${qrToken}`;
 
     // Generate Data URL for QR code
     const qrDataUrl = await qrcode.toDataURL(menuUrl, { width: 400, margin: 2 });
@@ -476,9 +502,9 @@ export const getAdminOrders = async (req: Request, res: Response, next: NextFunc
     if (search) {
       const searchStr = String(search).trim();
       whereClause.OR = [
-        { customerName: { contains: searchStr } },
-        { customerPhone: { contains: searchStr } },
-        { table: { number: { contains: searchStr } } },
+        { customerName: { contains: searchStr, mode: 'insensitive' } },
+        { customerPhone: { contains: searchStr, mode: 'insensitive' } },
+        { table: { number: { contains: searchStr, mode: 'insensitive' } } },
       ];
     }
 
