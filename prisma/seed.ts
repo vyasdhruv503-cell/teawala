@@ -882,7 +882,7 @@ async function main() {
       name: 'Tandoori Maggi',
       description: 'Smoky tandoori masala seasoned cheesy Maggi noodles bowl',
       price: 60.0,
-      image: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=500&auto=format&fit=crop&q=80',
+      image: '/tandoori-maggi.jpg',
       isVeg: true,
       isFeatured: true,
       preparationTime: 12,
