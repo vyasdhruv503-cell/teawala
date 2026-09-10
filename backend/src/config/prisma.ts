@@ -17,7 +17,9 @@ if (dbUrl) {
   }
   // Enforce pool limits to prevent P2037 / connection starvation on cloud DB
   if (!dbUrl.includes('connection_limit')) {
-    dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'connection_limit=5&pool_timeout=30';
+    dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'connection_limit=5&pool_timeout=30&connect_timeout=15';
+  } else if (!dbUrl.includes('connect_timeout')) {
+    dbUrl += '&connect_timeout=15';
   }
 } else {
   dbUrl = AIVEN_DB_URL;
