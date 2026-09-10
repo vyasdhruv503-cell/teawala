@@ -11,6 +11,7 @@ frontend/dist/
 # Local Environment & Secrets
 .env
 backend/.env
+prisma/.env
 *.local
 
 # Database
